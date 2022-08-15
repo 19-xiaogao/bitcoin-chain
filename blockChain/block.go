@@ -12,6 +12,7 @@ type Block struct {
 	Data          []byte // 区块数据
 	PrevBlockHash []byte // 上一个区块hash
 	Hash          []byte // 当前区块hash
+	Nonce         int
 }
 
 // 设置当前区块的hash
@@ -24,7 +25,7 @@ func (b *Block) SetHash() {
 
 // 创建区块
 func NewBlock(data string, prevBlockHash []byte) *Block {
-	block := &Block{time.Now().UnixMilli(), []byte(data), prevBlockHash, []byte{}}
+	block := &Block{time.Now().UnixMilli(), []byte(data), prevBlockHash, []byte{}, 0}
 	block.SetHash()
 	return block
 }
