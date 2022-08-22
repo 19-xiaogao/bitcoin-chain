@@ -1,7 +1,6 @@
-package prooFoWork
+package blockChain
 
 import (
-	"bitcoin-chain/blockChain"
 	"bitcoin-chain/utils"
 	"bytes"
 	"crypto/sha256"
@@ -14,14 +13,14 @@ var (
 	maxNonce = math.MaxInt64
 )
 
-const targetBits = 24
+const targetBits = 16
 
 type ProofOfWork struct {
-	block  *blockChain.Block
+	block  *Block
 	target *big.Int
 }
 
-func NewProofOfWork(b *blockChain.Block) *ProofOfWork {
+func NewProofOfWork(b *Block) *ProofOfWork {
 	target := big.NewInt(1)
 	target.Lsh(target, uint(256-targetBits))
 	pow := &ProofOfWork{b, target}
