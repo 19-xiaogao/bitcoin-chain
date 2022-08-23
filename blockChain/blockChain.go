@@ -1,6 +1,7 @@
 package blockChain
 
 import (
+	"fmt"
 	"github.com/boltdb/bolt"
 	"log"
 )
@@ -63,4 +64,41 @@ func (i *BlockchainIterator) Next() *Block {
 	}
 	i.currentHash = block.PrevBlockHash
 	return block
+}
+
+func NewBlockchain() *BlockChain {
+	var tip []byte
+	db, err := bolt.Open(dbFile, 0600, nil)
+	if err != nil {
+		log.Panic(err)
+	}
+	err = db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(blocksBucket))
+		if b == nil {
+			fmt.Println("No exiting blockchain found, creating a new one ...")
+			genesis := NewGenesisBlock()
+			b, err := tx.CreateBucket([]byte(blocksBucket))
+			if err != nil {
+				log.Panic(err)
+			}
+			err = b.Put(genesis.Hash, genesis.Serialize())
+			if err != nil {
+				log.Panic(err)
+			}
+			err = b.Put([]byte("l"), genesis.Hash)
+			if err != nil {
+				log.Panic(err)
+			}
+			tip = genesis.Hash
+		} else {
+			tip = b.Get([]byte("l"))
+		}
+		return nil
+	})
+
+	if err != nil {
+		log.Panic(err)
+	}
+	bc := BlockChain{tip, db}
+	return &bc
 }
