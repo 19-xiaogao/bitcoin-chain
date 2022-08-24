@@ -2,19 +2,21 @@ package blockChain
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/gob"
 	"log"
 	"time"
 )
 
 type Block struct {
-	Timestamp     int64  // 毫秒时间戳
-	Data          []byte // 区块数据
-	PrevBlockHash []byte // 上一个区块hash
-	Hash          []byte // 当前区块hash
+	Timestamp     int64          // 毫秒时间戳
+	Transactions  []*Transaction // 交易
+	PrevBlockHash []byte         // 上一个区块hash
+	Hash          []byte         // 当前区块hash
 	Nonce         int
 }
 
+// Serialize 将区块转换成字节流
 func (b *Block) Serialize() []byte {
 	var result bytes.Buffer
 	encoder := gob.NewEncoder(&result)
@@ -25,9 +27,9 @@ func (b *Block) Serialize() []byte {
 	return result.Bytes()
 }
 
-// 创建区块
-func NewBlock(data string, prevBlockHash []byte) *Block {
-	block := &Block{time.Now().UnixMilli(), []byte(data), prevBlockHash, []byte{}, 0}
+// NewBlock 创建区块
+func NewBlock(transaction []*Transaction, prevBlockHash []byte) *Block {
+	block := &Block{time.Now().UnixMilli(), transaction, prevBlockHash, []byte{}, 0}
 	pow := NewProofOfWork(block)
 	nonce, hash := pow.Run()
 	block.Nonce = nonce
@@ -35,11 +37,12 @@ func NewBlock(data string, prevBlockHash []byte) *Block {
 	return block
 }
 
-//创建创世区块
-func NewGenesisBlock() *Block {
-	return NewBlock("Genesis Block", []byte{})
+// NewGenesisBlock 创建创世区块
+func NewGenesisBlock(coinbase *Transaction) *Block {
+	return NewBlock([]*Transaction{coinbase}, []byte{})
 }
 
+// DeserializeBlock 对区块链反序列化
 func DeserializeBlock(d []byte) *Block {
 	var block Block
 	decoder := gob.NewDecoder(bytes.NewReader(d))
@@ -48,4 +51,16 @@ func DeserializeBlock(d []byte) *Block {
 		log.Panic(err)
 	}
 	return &block
+}
+
+func (b *Block) HashTransactions() []byte {
+	var txHashes [][]byte
+	var txHash [32]byte
+
+	for _, tx := range b.Transactions {
+		txHashes = append(txHashes, tx.ID)
+	}
+	txHash = sha256.Sum256(bytes.Join(txHashes, []byte{}))
+
+	return txHash[:]
 }
